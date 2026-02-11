@@ -11,12 +11,12 @@ import io.github.haykam821.diceyheights.DiceyHeights;
 import io.github.haykam821.diceyheights.game.ItemSpawnStrategy;
 import io.github.haykam821.diceyheights.game.map.DiceyHeightsMap;
 import net.minecraft.block.Blocks;
+import net.minecraft.entity.EntityPosition;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.Leashable;
 import net.minecraft.entity.attribute.EntityAttribute;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
 import net.minecraft.entity.attribute.EntityAttributes;
-import net.minecraft.entity.player.PlayerPosition;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.s2c.play.EntityVelocityUpdateS2CPacket;
 import net.minecraft.network.packet.s2c.play.PositionFlag;
@@ -119,7 +119,7 @@ public class PlayerEntry {
 			this.alivePlayer.teleport(world, this.pillarPos.getX(), this.pillarPos.getY(), this.pillarPos.getZ(), Set.of(), this.pillarYaw, 0, true);
 		} else {
 			Set<PositionFlag> flags = ImmutableSet.of(PositionFlag.X_ROT, PositionFlag.Y_ROT);
-			this.alivePlayer.networkHandler.requestTeleport(new PlayerPosition(this.pillarPos, this.alivePlayer.getVelocity(), 0, 0), flags);
+			this.alivePlayer.networkHandler.requestTeleport(new EntityPosition(this.pillarPos, this.alivePlayer.getVelocity(), 0, 0), flags);
 		}
 	}
 
