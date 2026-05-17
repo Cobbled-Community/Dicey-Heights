@@ -31,9 +31,11 @@ public class DiceyHeightsMapGenerator extends GameChunkGenerator {
         BlockPos max = new BlockPos(chunkPos.x() * 16 + 15, waitingPlatformY, chunkPos.z() * 16 + 15);
         BlockBounds chunkBounds = new BlockBounds(min, max);
         if (chunkBounds.intersects(waitingPlatformBounds)) {
-            for (BlockPos pos : waitingPlatformBounds) {
-                BlockState state = this.config.waitingPlatformProvider().getState(level, random, pos);
-                chunk.setBlockState(pos, state);
+            for (BlockPos pos : chunkBounds) {
+                if (waitingPlatformBounds.contains(pos)) {
+                    BlockState state = this.config.waitingPlatformProvider().getState(level, random, pos);
+                    chunk.setBlockState(pos, state);
+                }
             }
         }
     }
