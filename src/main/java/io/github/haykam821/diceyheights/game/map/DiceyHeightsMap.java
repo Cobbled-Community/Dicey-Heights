@@ -13,8 +13,6 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import xyz.nucleoid.map_templates.BlockBounds;
-import xyz.nucleoid.map_templates.MapTemplate;
-import xyz.nucleoid.plasmid.api.game.world.generator.TemplateChunkGenerator;
 
 public class DiceyHeightsMap {
 	private final DiceyHeightsMapConfig config;
@@ -24,30 +22,18 @@ public class DiceyHeightsMap {
 	private final BlockBounds waitingPlatformBounds;
 	private final int radius;
 
-	private final MapTemplate template;
 
 	public DiceyHeightsMap(DiceyHeightsMapConfig config, RandomSource random) {
 		this.config = config;
-
+		this.radius = config.radius().sample(random);
 		int waitingPlatformY = START_Y + config.waitingPlatformHeight().sample(random);
 		this.waitingPlatformBounds = BlockBounds.of(-5, waitingPlatformY, -5, 5, waitingPlatformY, 5);
-
-		this.radius = config.radius().sample(random);
-
-		this.template = MapTemplate.createEmpty();
-		this.placeWaitingPlatform(random);
 	}
 
-	private void placeWaitingPlatform(RandomSource random) {
-		for (BlockPos pos : this.waitingPlatformBounds) {
-			BlockState state = this.config.waitingPlatformProvider().getState(random, pos);
-			this.template.setBlockState(pos, state);
-		}
-	}
 
-	public void removeWaitingPlatform(ServerLevel world) {
+	public void removeWaitingPlatform(ServerLevel level) {
 		for (BlockPos pos : this.waitingPlatformBounds) {
-			world.destroyBlock(pos, false);
+			level.destroyBlock(pos, false);
 		}
 	}
 
@@ -68,14 +54,14 @@ public class DiceyHeightsMap {
 	/**
 	 * Places a pillar according to a player's pillar position.
 	 */
-	public void placePillar(ServerLevel world, RandomSource random, PlayerEntry player) {
+	public void placePillar(ServerLevel level, RandomSource random, PlayerEntry player) {
 		Vec3 pillarPos = player.getPillarPos();
 		BlockPos bottomPos = BlockPos.containing(pillarPos.x(), START_Y, pillarPos.z());
 		BlockPos.MutableBlockPos pos = bottomPos.mutable();
 
 		while (pos.getY() < pillarPos.y()) {
 			BlockState state = this.getPillarBlock(random, pos, player);
-			world.setBlockAndUpdate(pos, state);
+			level.setBlockAndUpdate(pos, state);
 
 			pos.move(Direction.UP);
 		}
@@ -86,7 +72,7 @@ public class DiceyHeightsMap {
 			return player.getTeam().getBlock();
 		}
 
-		return this.config.pillarProvider().getState(random, pos);
+		return this.config.pillarProvider().getState(player.getAlivePlayer().level(), random, pos);
 	}
 
 	public Vec3 getWaitingSpawnPos() {
@@ -94,7 +80,7 @@ public class DiceyHeightsMap {
 	}
 
 	public ChunkGenerator createGenerator(MinecraftServer server) {
-		return new TemplateChunkGenerator(server, this.template);
+		return new DiceyHeightsMapGenerator(this.config, server);
 	}
 
 	public void teleportToWaitingSpawn(ServerPlayer player) {

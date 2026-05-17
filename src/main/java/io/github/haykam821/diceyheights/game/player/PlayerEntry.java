@@ -74,49 +74,49 @@ public class PlayerEntry {
 		return this.pillarPos;
 	}
 
-	public void spawn(DiceyHeightsMap map, ServerLevel world, RandomSource random, int ticksUntilNextItem) {
-		map.placePillar(world, random, this);
+	public void spawn(DiceyHeightsMap map, ServerLevel level, RandomSource random, int ticksUntilNextItem) {
+		map.placePillar(level, random, this);
 
 		this.reset(GameType.SURVIVAL);
-		this.teleportToPillar(world, true);
+		this.teleportToPillar(level, true);
 
 		this.addSpawnAttributeModifier(Attributes.MOVEMENT_SPEED, new AttributeModifier(FREEZE_ID, -1, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
 		this.addSpawnAttributeModifier(Attributes.JUMP_STRENGTH, new AttributeModifier(FREEZE_ID, -1, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
 	}
 
-	public void tick(ServerLevel world, ItemSpawnStrategy strategy, int ticksUntilNextItem, boolean beforeFirstItem) {
+	public void tick(ServerLevel level, ItemSpawnStrategy strategy, int ticksUntilNextItem, boolean beforeFirstItem) {
 		if (!beforeFirstItem) {
 			this.clearSpawnAttributeModifiers();
 		} else if (ticksUntilNextItem % 5 == 0) {
-			this.teleportToPillar(world, false);
+			this.teleportToPillar(level, false);
 		}
 
 		if (this.isPillarApplicable(strategy)) {
-			spawnPillarItemSpawnParticles(world, this.pillarPos);
+			spawnPillarItemSpawnParticles(level, this.pillarPos);
 		}
 	}
 
-	public void giveItemStack(ServerLevel world, ItemSpawnStrategy strategy, Supplier<ItemStack> stackSupplier) {
+	public void giveItemStack(ServerLevel level, ItemSpawnStrategy strategy, Supplier<ItemStack> stackSupplier) {
 		if (this.isPillarApplicable(strategy)) {
 			ItemStack stack = stackSupplier.get();
 
 			if (!stack.isEmpty()) {
-				ItemEntity entity = new ItemEntity(world, this.pillarPos.x(), this.pillarPos.y(), this.pillarPos.z(), stack);
-				world.addFreshEntity(entity);
+				ItemEntity entity = new ItemEntity(level, this.pillarPos.x(), this.pillarPos.y(), this.pillarPos.z(), stack);
+				level.addFreshEntity(entity);
 			}
 		} else if (strategy == ItemSpawnStrategy.DIRECT && this.alivePlayer != null) {
 			this.alivePlayer.addItem(stackSupplier.get());
 		}
 	}
 
-	private void teleportToPillar(ServerLevel world, boolean initial) {
+	private void teleportToPillar(ServerLevel level, boolean initial) {
 		this.alivePlayer.fallDistance = 0;
 
 		if (initial) {
 			this.alivePlayer.setDeltaMovement(Vec3.ZERO);
 			this.alivePlayer.connection.send(new ClientboundSetEntityMotionPacket(this.alivePlayer));
 
-			this.alivePlayer.teleportTo(world, this.pillarPos.x(), this.pillarPos.y(), this.pillarPos.z(), Set.of(), this.pillarYaw, 0, true);
+			this.alivePlayer.teleportTo(level, this.pillarPos.x(), this.pillarPos.y(), this.pillarPos.z(), Set.of(), this.pillarYaw, 0, true);
 		} else {
 			Set<Relative> flags = ImmutableSet.of(Relative.X_ROT, Relative.Y_ROT);
 			this.alivePlayer.connection.teleport(new PositionMoveRotation(this.pillarPos, this.alivePlayer.getDeltaMovement(), 0, 0), flags);

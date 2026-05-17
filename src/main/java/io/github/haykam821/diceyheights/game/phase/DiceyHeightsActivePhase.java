@@ -59,7 +59,7 @@ import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 public class DiceyHeightsActivePhase implements GameActivityEvents.Enable, GameActivityEvents.Tick, GamePlayerEvents.Accept, GamePlayerEvents.Remove, PlayerDeathEvent {
 	private final GameSpace gameSpace;
 	private final RandomSource random;
-	private final ServerLevel world;
+	private final ServerLevel level;
 	private final DiceyHeightsMap map;
 	private final DiceyHeightsConfig config;
 
@@ -76,10 +76,10 @@ public class DiceyHeightsActivePhase implements GameActivityEvents.Enable, GameA
 
 	private int ticksUntilClose = -1;
 
-	public DiceyHeightsActivePhase(GameSpace gameSpace, ServerLevel world, DiceyHeightsMap map, DiceyHeightsConfig config, Optional<TeamSelectionLobby> maybeTeamSelection, Optional<TeamManager> maybeTeamManager) {
+	public DiceyHeightsActivePhase(GameSpace gameSpace, ServerLevel level, DiceyHeightsMap map, DiceyHeightsConfig config, Optional<TeamSelectionLobby> maybeTeamSelection, Optional<TeamManager> maybeTeamManager) {
 		this.gameSpace = gameSpace;
-		this.world = world;
-		this.random = world.getRandom();
+		this.level = level;
+		this.random = level.getRandom();
 		this.map = map;
 		this.config = config;
 
@@ -121,7 +121,7 @@ public class DiceyHeightsActivePhase implements GameActivityEvents.Enable, GameA
 		this.singleplayer = players.size() == 1;
 
 		this.items = this.config.items().orElseGet(() -> {
-			List<Holder.Reference<Item>> items = this.world.registryAccess()
+			List<Holder.Reference<Item>> items = this.level.registryAccess()
 				.lookupOrThrow(Registries.ITEM)
 				.listElements()
 				.filter(this::isItemEnabled)
@@ -151,7 +151,7 @@ public class DiceyHeightsActivePhase implements GameActivityEvents.Enable, GameA
 		}
 	}
 
-	public static void open(GameSpace gameSpace, ServerLevel world, DiceyHeightsMap map, DiceyHeightsConfig config, Optional<TeamSelectionLobby> teamSelection) {
+	public static void open(GameSpace gameSpace, ServerLevel level, DiceyHeightsMap map, DiceyHeightsConfig config, Optional<TeamSelectionLobby> teamSelection) {
 		gameSpace.setActivity(activity -> {
 			Optional<TeamManager> maybeTeamManager = config.teams().map(teams -> {
 				TeamManager teamManager = TeamManager.addTo(activity);
@@ -168,7 +168,7 @@ public class DiceyHeightsActivePhase implements GameActivityEvents.Enable, GameA
 				return teamManager;
 			});
 
-			DiceyHeightsActivePhase phase = new DiceyHeightsActivePhase(gameSpace, world, map, config, teamSelection, maybeTeamManager);
+			DiceyHeightsActivePhase phase = new DiceyHeightsActivePhase(gameSpace, level, map, config, teamSelection, maybeTeamManager);
 
 			DiceyHeightsActivePhase.setRules(activity, true);
 
@@ -186,10 +186,10 @@ public class DiceyHeightsActivePhase implements GameActivityEvents.Enable, GameA
 
 	@Override
 	public void onEnable() {
-		this.map.removeWaitingPlatform(this.world);
+		this.map.removeWaitingPlatform(this.level);
 
 		for (PlayerEntry player : this.players) {
-			player.spawn(this.map, this.world, this.random, this.ticksUntilNextItem);
+			player.spawn(this.map, this.level, this.random, this.ticksUntilNextItem);
 		}
 
 		for (ServerPlayer player : this.gameSpace.getPlayers().spectators()) {
@@ -211,13 +211,13 @@ public class DiceyHeightsActivePhase implements GameActivityEvents.Enable, GameA
 		}
 
 		for (PlayerEntry entry : this.players) {
-			entry.tick(this.world, this.config.itemSpawnStrategy(), this.ticksUntilNextItem, this.beforeFirstItem);
+			entry.tick(this.level, this.config.itemSpawnStrategy(), this.ticksUntilNextItem, this.beforeFirstItem);
 
 			ServerPlayer player = entry.getAlivePlayer();
 
 			if (player != null) {
 				if (player.getY() > (DiceyHeightsMap.START_Y + this.config.mapConfig().maxHeight())) {
-					player.hurtServer(this.world, this.world.damageSources().fellOutOfWorld(), 1);
+					player.hurtServer(this.level, this.level.damageSources().fellOutOfWorld(), 1);
 				} else if (map.isOutOfBounds(player)) {
 					this.eliminate(entry);
 				}
@@ -245,7 +245,7 @@ public class DiceyHeightsActivePhase implements GameActivityEvents.Enable, GameA
 
 	@Override
 	public JoinAcceptorResult onAcceptPlayers(JoinAcceptor acceptor) {
-		return acceptor.teleport(this.world, this.map.getWaitingSpawnPos()).thenRunForEach(player -> {
+		return acceptor.teleport(this.level, this.map.getWaitingSpawnPos()).thenRunForEach(player -> {
 			player.setGameMode(GameType.SPECTATOR);
 		});
 	}
@@ -269,7 +269,7 @@ public class DiceyHeightsActivePhase implements GameActivityEvents.Enable, GameA
 		}
 
 		Item item = entry.value();
-		return !(item instanceof GameMasterBlockItem) && !(item instanceof AirItem) && item.isEnabled(this.world.enabledFeatures());
+		return !(item instanceof GameMasterBlockItem) && !(item instanceof AirItem) && item.isEnabled(this.level.enabledFeatures());
 	}
 
 	private void resetTicksUntilNextItem(boolean beforeFirstItem, IntProvider provider) {
@@ -285,7 +285,7 @@ public class DiceyHeightsActivePhase implements GameActivityEvents.Enable, GameA
 		for (int roll = 0; roll < itemRolls; roll += 1) {
 			if (this.config.separate()) {
 				for (PlayerEntry player : this.players) {
-					player.giveItemStack(this.world, strategy, () -> {
+					player.giveItemStack(this.level, strategy, () -> {
 						return this.getRandomItem()
 							.map(entry -> {
 								int count = this.config.itemCount().sample(this.random);
@@ -297,7 +297,7 @@ public class DiceyHeightsActivePhase implements GameActivityEvents.Enable, GameA
 			} else {
 				this.getRandomItem().ifPresent(entry -> {
 					for (PlayerEntry player : this.players) {
-						player.giveItemStack(this.world, strategy, () -> {
+						player.giveItemStack(this.level, strategy, () -> {
 							int count = this.config.itemCount().sample(this.random);
 							return new ItemStack(entry, count);
 						});
