@@ -176,7 +176,7 @@ public class PlayerEntry {
 
 	private static void spawnPillarItemSpawnParticles(ServerLevel world, Vec3 pos) {
 		// This effect could be improved
-		ParticleOptions particle = new BlockParticleOption(ParticleTypes.BLOCK, Blocks.WHITE_WOOL.defaultBlockState());
+		ParticleOptions particle = new BlockParticleOption(ParticleTypes.BLOCK, Blocks.WOOL.white().defaultBlockState());
 		world.sendParticles(particle, pos.x(), pos.y(), pos.z(), 0, 0, 1, 0, 1);
 	}
 }

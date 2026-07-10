@@ -21,7 +21,7 @@ public record DiceyHeightsMapConfig(
 	public static final DiceyHeightsMapConfig DEFAULT = new DiceyHeightsMapConfig(
 		ConstantInt.of(5),
 		ConstantInt.of(24),
-		BlockStateProvider.simple(Blocks.MAGENTA_CONCRETE),
+		BlockStateProvider.simple(Blocks.CONCRETE.magenta()),
 		ConstantInt.of(12),
 		ConstantInt.of(24),
 		BlockStateProvider.simple(Blocks.BEDROCK),
